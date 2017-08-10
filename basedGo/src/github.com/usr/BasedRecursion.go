@@ -8,12 +8,11 @@ import (
 	"encoding/json"
 	"log"
 	"reflect"
-	"go/types"
 )
 
 var (
 	counter int
-	mapper Keyvalue
+	mapper map[int]interface{}
 	array_diff = make(map[string][]Keyvalue)
 )
 
@@ -27,8 +26,24 @@ func check(e error) {
 	}
 }
 
-func recursion(original Keyvalue, modified Keyvalue, path []string) {
+func ListStripper(input Keyvalue ) []string {
+	var r []string
+	for key := range input {
+		r = append(r, key)
+	}
+	return r
+}
 
+func IndexOf(inputList []string, inputKey string) int {
+	for i, v := range inputList {
+		if v == inputKey {
+			return i
+		}
+	}
+	return -1
+}
+
+func recursion(original Keyvalue, modified Keyvalue, path []string) {
 
 	kListModified := ListStripper(modified)
 	kListOriginal := ListStripper(original)
@@ -56,34 +71,37 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 		return
 	}
 	for k := range original {
+		var valOrig, valMod interface{}
 		counter++
 
-		if reflect.TypeOf(original) == types.String {
+		if reflect.TypeOf(original).Name() == "string" {
 
+			valOrig = original
+		} else {
+			valOrig = original[k]
+		}
+		if reflect.TypeOf(modified).Name() == "string" {
+			valMod = modified
+		} else {
+			valMod = modified[k]
 		}
 
-
-		/*
-		switch v := interface{}(original).(type) {
-		case string:
-			valOrig = v
-		default:
-			valOrig = v[k]
+		if !(reflect.DeepEqual(valMod, valOrig)) {
+			if reflect.TypeOf(valOrig).Name() == "string" {
+				array_diff["Changed"] = append(array_diff["Changed"],Keyvalue{"Path": path, "Key": k, "oldValue":valOrig,"newValue":valMod})
+				return
+			} else {
+				npath := append(path, k)
+				//mapper[counter] = npath
+				fmt.Println(npath)
+				recursion(Keyvalue{k: original[k]}, Keyvalue{k: modified[k]}, npath)
+				return
+			}
 		}
-		switch v := interface{}(modified).(type) {
- 	  	case string:
-			valMod = v
-		default:
-			valMod = v[k]
-		}
-		if valOrig != valMod {
-			fmt.Println("help")
-		}
-		*/
-
+		return
 
 	}
-
+	return
 }
 
 
@@ -197,19 +215,3 @@ func main() {
 }
 
 
-func ListStripper(input Keyvalue ) []string {
-	var r []string
-	for key := range input {
-		r = append(r, key)
-	}
-	return r
-}
-
-func IndexOf(inputList []string, inputKey string) int {
-	for i, v := range inputList {
-		if v == inputKey {
-			return i
-		}
-	}
-	return -1
-}
