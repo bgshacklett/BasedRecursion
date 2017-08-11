@@ -48,6 +48,11 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 	kListModified := ListStripper(modified)
 	kListOriginal := ListStripper(original)
 
+	fmt.Println(":::SHIT AT START OF FUNCTION:::")
+	fmt.Println(kListModified)
+	fmt.Println(kListOriginal)
+	fmt.Println(path)
+	fmt.Println(":::::::::::::::::")
 	if len(kListModified) > 1 || len(kListOriginal) > 1 {
 		proc := true
 		for k, v := range original {
@@ -72,6 +77,7 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 	}
 	for k := range original {
 		var valOrig, valMod interface{}
+		var back_orig, back_mod Keyvalue
 		counter++
 
 		if reflect.TypeOf(original).Name() == "string" {
@@ -85,16 +91,33 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 		} else {
 			valMod = modified[k]
 		}
+		fmt.Println(":::COMPARING INPUTS:::")
+		fmt.Println(k)
+		fmt.Println(valOrig)
+		fmt.Println(valMod)
+		fmt.Println("::::::::::::::::::::::::::")
 
 		if !(reflect.DeepEqual(valMod, valOrig)) {
-			if reflect.TypeOf(valOrig).Name() == "string" {
+			fmt.Println(":::TYPE OF VALUE THINGY:::")
+			fmt.Println(reflect.TypeOf(valOrig).Name())
+			fmt.Println("::::::::::::::::::::::::::")
+
+			if reflect.TypeOf(valOrig).Name() != "" {
+				fmt.Println("SHOULD BE ADDING SHIT \\\\\\\\\\\\\\\\\\\\")
 				array_diff["Changed"] = append(array_diff["Changed"],Keyvalue{"Path": path, "Key": k, "oldValue":valOrig,"newValue":valMod})
 				return
 			} else {
 				npath := append(path, k)
-				//mapper[counter] = npath
-				fmt.Println(npath)
-				recursion(Keyvalue{k: original[k]}, Keyvalue{k: modified[k]}, npath)
+
+				fmt.Println(valOrig)
+				fmt.Println(valMod)
+
+				orig_out,_ := json.Marshal(valOrig)
+				_ = json.Unmarshal([]byte(orig_out), &back_orig)
+				mod_out,_ := json.Marshal(valOrig)
+				_ = json.Unmarshal([]byte(mod_out), &back_mod)
+				//fmt.Println(back_orig)
+				go recursion(back_orig,back_mod, npath)
 				return
 			}
 		}
@@ -175,7 +198,13 @@ func main() {
 				check(err)
 				_ = json.Unmarshal([]byte(read), &json_modified)
 
-				recursion(json_original, json_modified, path)
+
+				if reflect.DeepEqual(json_original, json_modified) {
+					fmt.Println("No differences!")
+					os.Exit(0)
+				} else {
+					recursion(json_original, json_modified, path)
+				}
 
 
 
