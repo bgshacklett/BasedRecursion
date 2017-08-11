@@ -11,8 +11,6 @@ import (
 )
 
 var (
-	counter int
-	mapper map[int]interface{}
 	array_diff = make(map[string][]Keyvalue)
 )
 
@@ -48,11 +46,6 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 	kListModified := ListStripper(modified)
 	kListOriginal := ListStripper(original)
 
-	fmt.Println(":::SHIT AT START OF FUNCTION:::")
-	fmt.Println(kListModified)
-	fmt.Println(kListOriginal)
-	fmt.Println(path)
-	fmt.Println(":::::::::::::::::")
 	if len(kListModified) > 1 || len(kListOriginal) > 1 {
 		proc := true
 		for k, v := range original {
@@ -78,7 +71,6 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 	for k := range original {
 		var valOrig, valMod interface{}
 		var back_orig, back_mod Keyvalue
-		counter++
 
 		if reflect.TypeOf(original).Name() == "string" {
 
@@ -91,38 +83,24 @@ func recursion(original Keyvalue, modified Keyvalue, path []string) {
 		} else {
 			valMod = modified[k]
 		}
-		fmt.Println(":::COMPARING INPUTS:::")
-		fmt.Println(k)
-		fmt.Println(valOrig)
-		fmt.Println(valMod)
-		fmt.Println("::::::::::::::::::::::::::")
 
 		if !(reflect.DeepEqual(valMod, valOrig)) {
-			fmt.Println(":::TYPE OF VALUE THINGY:::")
-			fmt.Println(reflect.TypeOf(valOrig).Name())
-			fmt.Println("::::::::::::::::::::::::::")
 
-			if reflect.TypeOf(valOrig).Name() != "" {
-				fmt.Println("SHOULD BE ADDING SHIT \\\\\\\\\\\\\\\\\\\\")
-				array_diff["Changed"] = append(array_diff["Changed"],Keyvalue{"Path": path, "Key": k, "oldValue":valOrig,"newValue":valMod})
-				return
-			} else {
+			if reflect.TypeOf(valOrig).Kind() == reflect.Map {
 				npath := append(path, k)
-
-				fmt.Println(valOrig)
-				fmt.Println(valMod)
 
 				orig_out,_ := json.Marshal(valOrig)
 				_ = json.Unmarshal([]byte(orig_out), &back_orig)
-				mod_out,_ := json.Marshal(valOrig)
+				mod_out,_ := json.Marshal(valMod)
 				_ = json.Unmarshal([]byte(mod_out), &back_mod)
-				//fmt.Println(back_orig)
-				go recursion(back_orig,back_mod, npath)
+				recursion(back_orig, back_mod, npath)
+				return
+			} else {
+				array_diff["Changed"] = append(array_diff["Changed"],Keyvalue{"Path": path, "Key": k, "oldValue":valOrig,"newValue":valMod})
 				return
 			}
 		}
 		return
-
 	}
 	return
 }
